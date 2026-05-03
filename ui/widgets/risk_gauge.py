@@ -8,6 +8,10 @@ class RiskGauge(QWidget):
     def __init__(self):
         super().__init__()
         self._value = 0
+        self.current_theme = "dark"
+        self.animation = None
+
+        self.setMinimumSize(260, 220)
 
     def get_value(self):
         return self._value
@@ -27,53 +31,109 @@ class RiskGauge(QWidget):
         self.animation.setEndValue(value)
         self.animation.start()
 
+    def set_theme(self, theme):
+        self.current_theme = theme
+        self.update()
+
+    def get_main_window(self):
+        parent = self.parent()
+
+        while parent is not None:
+            if hasattr(parent, "main_window"):
+                return parent.main_window
+            parent = parent.parent()
+
+        return None
+
+    def tr_text(self, key, fallback):
+        main_window = self.get_main_window()
+
+        if main_window and hasattr(main_window, "tr"):
+            return main_window.tr(key)
+
+        return fallback
+
+    def get_theme_colors(self):
+        main_window = self.get_main_window()
+        theme = getattr(main_window, "current_theme", self.current_theme)
+
+        if theme == "light":
+            return {
+                "text": "#0f172a",
+                "muted": "#475569",
+                "track": "#e2e8f0",
+                "background": "#ffffff",
+            }
+
+        return {
+            "text": "#ffffff",
+            "muted": "#94a3b8",
+            "track": "#1f2937",
+            "background": "#111827",
+        }
+
+    def get_risk_info(self):
+        if self._value < 30:
+            return "#22c55e", self.tr_text("risk_low", "Low")
+
+        if self._value < 60:
+            return "#f59e0b", self.tr_text("risk_medium", "Medium")
+
+        return "#ef4444", self.tr_text("risk_high", "High")
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
+        colors = self.get_theme_colors()
+        risk_color, risk_label = self.get_risk_info()
+
         rect = self.rect()
 
-        size = min(rect.width(), rect.height()) - 20
+        size = min(rect.width(), rect.height()) - 34
+        size = max(120, size)
+
         x = (rect.width() - size) / 2
-        y = (rect.height() - size) / 2
+        y = (rect.height() - size) / 2 - 6
 
         arc_rect = QRectF(x, y, size, size)
 
-        # фон
-        pen = QPen(QColor("#1f2937"), 12)
-        painter.setPen(pen)
+        # Фонова дуга
+        track_pen = QPen(QColor(colors["track"]), 13)
+        track_pen.setCapStyle(Qt.FlatCap)
+        painter.setPen(track_pen)
         painter.drawArc(arc_rect, 180 * 16, 180 * 16)
 
-        # колір по рівню
-        if self._value < 30:
-            color = "#22c55e"
-            label = "Low"
-        elif self._value < 60:
-            color = "#f59e0b"
-            label = "Medium"
-        else:
-            color = "#ef4444"
-            label = "High"
-
-        # Заповнення
-        pen = QPen(QColor(color), 12)
-        painter.setPen(pen)
+        # Заповнена частина дуги
+        value_pen = QPen(QColor(risk_color), 13)
+        value_pen.setCapStyle(Qt.FlatCap)
+        painter.setPen(value_pen)
 
         span_angle = int((self._value / 100) * 180 * 16)
         painter.drawArc(arc_rect, 180 * 16, -span_angle)
 
-        # число
-        painter.setPen(QColor("white"))
-        font = QFont()
-        font.setPointSize(16)
-        font.setBold(True)
-        painter.setFont(font)
+        # Число
+        value_font = QFont()
+        value_font.setPointSize(17)
+        value_font.setBold(True)
+        painter.setFont(value_font)
+        painter.setPen(QColor(colors["text"]))
 
-        painter.drawText(rect, Qt.AlignCenter, f"{self._value}")
+        painter.drawText(
+            rect.adjusted(0, -4, 0, 0),
+            Qt.AlignCenter,
+            str(self._value)
+        )
 
-        # label
-        font.setPointSize(10)
-        font.setBold(False)
-        painter.setFont(font)
+        # Рівень ризику
+        label_font = QFont()
+        label_font.setPointSize(10)
+        label_font.setBold(False)
+        painter.setFont(label_font)
+        painter.setPen(QColor(colors["text"]))
 
-        painter.drawText(rect.adjusted(0, 30, 0, 0), Qt.AlignHCenter, label)
+        painter.drawText(
+            rect.adjusted(0, 34, 0, 0),
+            Qt.AlignHCenter,
+            risk_label
+        )
