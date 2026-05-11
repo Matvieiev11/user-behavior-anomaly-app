@@ -224,7 +224,6 @@ translations = {
         "no": "No",
         "lang_short": "ENG",
         "dashboard_page_title": "Dashboard",
-        "dashboard_page_subtitle": "Intelligent application for detecting behavioral anomalies",
         "export_csv": "Export to CSV",
         "load_data": "Load Data",
         "run_analysis": "Run Analysis",
