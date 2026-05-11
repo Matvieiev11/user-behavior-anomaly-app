@@ -180,7 +180,6 @@ class DashboardPage(QWidget):
 
     def update_language(self):
         self.title_label.setText(self.tr("dashboard_page_title"))
-        self.subtitle_label.setText(self.tr("dashboard_page_subtitle"))
 
         self.export_button.setText(self.tr("export_csv"))
         self.email_report_button.setText(self.tr("send_email_report"))
