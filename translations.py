@@ -11,7 +11,6 @@ translations = {
         "no": "Ні",
         "lang_short": "UKR",
         "dashboard_page_title": "Інформаційна панель",
-        "dashboard_page_subtitle": "Інтелектуальний застосунок для виявлення поведінкових аномалій",
         "export_csv": "Експортувати у CSV",
         "load_data": "Завантажити дані",
         "run_analysis": "Запустити аналіз",

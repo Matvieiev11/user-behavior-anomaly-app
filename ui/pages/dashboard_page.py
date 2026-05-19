@@ -13,6 +13,8 @@ from services.history_service import log_analysis
 from services.report_service import generate_pdf_report
 from services.email_service import send_email_report
 from services.risk_service import calculate_user_risk_score
+from time import perf_counter
+from services.compare_approaches import print_detection_approaches_comparison
 
 class DashboardPage(QWidget):
     def __init__(self):
@@ -240,25 +242,46 @@ class DashboardPage(QWidget):
             self.result_label.setText(self.tr("select_csv_first"))
             return
 
+        total_start_time = perf_counter()
+
+        file_load_start_time = perf_counter()
         self.data = load_data(self.file_path)
+        file_load_time = perf_counter() - file_load_start_time
 
         if self.data is None:
             self.result_label.setText(self.tr("data_load_error"))
             return
 
+        analysis_start_time = perf_counter()
         self.result_data = detect_anomalies(self.data)
+        analysis_time = perf_counter() - analysis_start_time
+
+        total_time = perf_counter() - total_start_time
+
         self.user_stats = get_user_statistics(self.result_data)
 
         anomalies_count = len(self.result_data[self.result_data["anomaly"] == -1])
         users_count = len(self.result_data["user_id"].unique())
         sessions_count = len(self.result_data)
         system_risk = round((anomalies_count / sessions_count) * 100, 1) if sessions_count else 0
+
         if system_risk < 10:
             risk_color = "#22c55e"
         elif system_risk < 25:
             risk_color = "#f59e0b"
         else:
             risk_color = "#ef4444"
+
+        print("=== Результати експериментального запуску ===")
+        print(f"Проаналізовано сеансів: {sessions_count}")
+        print(f"Кількість користувачів: {users_count}")
+        print(f"Виявлено аномалій: {anomalies_count}")
+        print(f"Загальний системний ризик: {system_risk:.2f}%")
+        print(f"Час зчитування CSV-файлу: {file_load_time:.3f} с")
+        print(f"Час виконання аналізу: {analysis_time:.3f} с")
+        print(f"Загальний час виконання: {total_time:.3f} с")
+
+        print_detection_approaches_comparison(self.data)
 
         self.last_sessions_count = sessions_count
         self.last_anomalies_count = anomalies_count
